@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Opening Apex Mobile...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 360px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(35, 91, 186, 0.12);
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      background: #235BBA;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+
+    h1 {
+      font-size: 22px;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .hospital-name {
+      font-size: 16px;
+      color: #235BBA;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e0e8ff;
+      border-top-color: #235BBA;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #235BBA;
+      color: white;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      width: 100%;
+    }
+
+    .not-installed {
+      display: none;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">🏥</div>
+  <h1>Opening Apex Mobile</h1>
+  <p class="hospital-name" id="hospitalLabel">Loading...</p>
+  <div class="spinner" id="spinner"></div>
+  <p id="statusText">Please wait while we open the app...</p>
+
+  <!-- Fallback button shown if app doesn't open -->
+  <a href="#" class="btn" id="openBtn" style="display:none">
+    Open Apex Mobile App
+  </a>
+
+  <p class="not-installed" id="notInstalled">
+    If the app doesn't open, make sure Apex Mobile is installed on your device.
+  </p>
+</div>
+
+<script>
+  // ── Read parameters from URL ───────────────────────────────────────────────
+  const params     = new URLSearchParams(window.location.search);
+  const hospitalId = params.get('hospital') || 'unknown';
+
+  // Human-readable names map — keep this in sync with your Flutter app
+  const hospitalNames = {
+    'ridge_hospital' : 'Ridge Hospital',
+    'korle_bu'       : 'Korle Bu Teaching Hospital',
+    '37_military'    : '37 Military Hospital',
+    'nyaho_clinic'   : 'Nyaho Medical Centre',
+    'tema_general'   : 'Tema General Hospital',
+    'lekma_hospital' : 'Lekma Hospital',
+  };
+
+  const hospitalName = hospitalNames[hospitalId] || 'the hospital';
+
+  // ── Update UI ──────────────────────────────────────────────────────────────
+  document.getElementById('hospitalLabel').textContent = hospitalName;
+
+  // ── Build the deep link ────────────────────────────────────────────────────
+  const deepLink = `apexmobile://checkin?hospital=${hospitalId}`;
+
+  // ── Try to open the app ───────────────────────────────────────────────────
+  // Small delay so the page renders first
+  setTimeout(() => {
+    window.location.href = deepLink;
+  }, 600);
+
+  // ── Fallback: show manual button if app didn't open in 2 seconds ──────────
+  setTimeout(() => {
+    document.getElementById('spinner').style.display    = 'none';
+    document.getElementById('statusText').textContent   = 'Tap the button below if the app didn\'t open automatically.';
+    document.getElementById('openBtn').style.display    = 'block';
+    document.getElementById('openBtn').href             = deepLink;
+    document.getElementById('notInstalled').style.display = 'block';
+  }, 2000);
+</script>
+
+</body>
+</html>
