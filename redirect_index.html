@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Opening Apex Mobile...</title>
+  <title>Open Apex Mobile</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -19,7 +19,7 @@
     .card {
       background: white;
       border-radius: 20px;
-      padding: 40px 32px;
+      padding: 40px 28px;
       max-width: 360px;
       width: 90%;
       text-align: center;
@@ -35,60 +35,47 @@
       align-items: center;
       justify-content: center;
       margin: 0 auto 20px;
-      font-size: 32px;
+      font-size: 36px;
     }
 
-    h1 {
-      font-size: 22px;
-      color: #1a1a2e;
+    h1 { font-size: 22px; color: #1a1a2e; margin-bottom: 8px; }
+
+    .hospital-name {
+      font-size: 17px;
+      color: #235BBA;
+      font-weight: 700;
       margin-bottom: 8px;
     }
 
-    .hospital-name {
-      font-size: 16px;
-      color: #235BBA;
-      font-weight: 600;
-      margin-bottom: 24px;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e0e8ff;
-      border-top-color: #235BBA;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 20px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    p {
-      color: #666;
+    .subtitle {
       font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 24px;
+      color: #888;
+      margin-bottom: 32px;
     }
 
-    .btn {
-      display: inline-block;
+    /* ── Main CTA button — this IS the user gesture Chrome requires ── */
+    .btn-main {
+      display: block;
       background: #235BBA;
       color: white;
-      padding: 14px 32px;
-      border-radius: 12px;
+      padding: 16px;
+      border-radius: 14px;
       text-decoration: none;
-      font-weight: 600;
-      font-size: 16px;
+      font-weight: 700;
+      font-size: 17px;
+      margin-bottom: 14px;
+      border: none;
       width: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
     }
+    .btn-main:active { background: #1a4a9e; }
 
-    .not-installed {
-      display: none;
-      margin-top: 16px;
-      font-size: 13px;
-      color: #999;
+    .hint {
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 20px;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -96,27 +83,28 @@
 
 <div class="card">
   <div class="logo">🏥</div>
-  <h1>Opening Apex Mobile</h1>
+  <h1>Check-in Required</h1>
   <p class="hospital-name" id="hospitalLabel">Loading...</p>
-  <div class="spinner" id="spinner"></div>
-  <p id="statusText">Please wait while we open the app...</p>
+  <p class="subtitle">You're near this hospital. Tap below to open the Apex Mobile app and record your visit.</p>
 
-  <!-- Fallback button shown if app doesn't open -->
-  <a href="#" class="btn" id="openBtn" style="display:none">
+  <!--
+    KEY FIX: Chrome requires a real user tap (gesture) to open apps.
+    The href uses the Chrome intent format for Android,
+    which works in Chrome AND falls back gracefully if app not found.
+    The button tap IS the user gesture — no setTimeout needed.
+  -->
+  <a class="btn-main" id="openBtn" href="#">
     Open Apex Mobile App
   </a>
 
-  <p class="not-installed" id="notInstalled">
-    If the app doesn't open, make sure Apex Mobile is installed on your device.
+  <p class="hint">
+    Make sure the Apex Mobile app is installed.<br/>
+    The app will open automatically when you tap above.
   </p>
 </div>
 
 <script>
-  // ── Read parameters from URL ───────────────────────────────────────────────
-  const params     = new URLSearchParams(window.location.search);
-  const hospitalId = params.get('hospital') || 'unknown';
-
-  // Human-readable names map — keep this in sync with your Flutter app
+  // ── Hospital name map (keep in sync with Flutter _availableHospitals) ─────
   const hospitalNames = {
     'ridge_hospital' : 'Ridge Hospital',
     'korle_bu'       : 'Korle Bu Teaching Hospital',
@@ -126,28 +114,49 @@
     'lekma_hospital' : 'Lekma Hospital',
   };
 
-  const hospitalName = hospitalNames[hospitalId] || 'the hospital';
+  // ── Read hospital from URL param ───────────────────────────────────────────
+  const params     = new URLSearchParams(window.location.search);
+  const hospitalId = params.get('hospital') || 'ridge_hospital';
+  const name       = hospitalNames[hospitalId] || 'the hospital';
 
-  // ── Update UI ──────────────────────────────────────────────────────────────
-  document.getElementById('hospitalLabel').textContent = hospitalName;
+  document.getElementById('hospitalLabel').textContent = name;
 
-  // ── Build the deep link ────────────────────────────────────────────────────
-  const deepLink = `apexmobile://checkin?hospital=${hospitalId}`;
+  // ── YOUR PACKAGE NAME — change this to match your Flutter app ─────────────
+  // Find it in: android/app/build.gradle → applicationId
+  // e.g.  "com.apex.apexmobile"  or  "com.example.apexmobile"
+  const packageName = 'com.example.apexmobile'; // ← CHANGE THIS
 
-  // ── Try to open the app ───────────────────────────────────────────────────
-  // Small delay so the page renders first
-  setTimeout(() => {
-    window.location.href = deepLink;
-  }, 600);
+  // ── Detect browser ────────────────────────────────────────────────────────
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isChrome  = /chrome/i.test(navigator.userAgent) && !/edg/i.test(navigator.userAgent);
 
-  // ── Fallback: show manual button if app didn't open in 2 seconds ──────────
-  setTimeout(() => {
-    document.getElementById('spinner').style.display    = 'none';
-    document.getElementById('statusText').textContent   = 'Tap the button below if the app didn\'t open automatically.';
-    document.getElementById('openBtn').style.display    = 'block';
-    document.getElementById('openBtn').href             = deepLink;
-    document.getElementById('notInstalled').style.display = 'block';
-  }, 2000);
+  // ── Build the correct deep link for each platform/browser ─────────────────
+  function buildLink() {
+    if (isAndroid && isChrome) {
+      // ✅ Chrome on Android requires the intent:// format — NOT apexmobile://
+      // This is the ONLY format Chrome on Android accepts
+      // S.browser_fallback_url = where to go if app not installed
+      const fallback = encodeURIComponent('https://play.google.com/store');
+      return `intent://checkin?hospital=${hospitalId}#Intent;scheme=apexmobile;package=${packageName};S.browser_fallback_url=${fallback};end`;
+
+    } else if (isAndroid) {
+      // Other Android browsers (Firefox, Samsung) — plain custom scheme works
+      return `apexmobile://checkin?hospital=${hospitalId}`;
+
+    } else if (isIOS) {
+      // iOS Safari — plain custom scheme works
+      return `apexmobile://checkin?hospital=${hospitalId}`;
+
+    } else {
+      // Desktop or unknown — just use plain scheme
+      return `apexmobile://checkin?hospital=${hospitalId}`;
+    }
+  }
+
+  // ── Set the button href ────────────────────────────────────────────────────
+  // The user TAPPING this link is the "user gesture" Chrome requires
+  document.getElementById('openBtn').href = buildLink();
 </script>
 
 </body>
